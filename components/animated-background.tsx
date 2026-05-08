@@ -42,13 +42,12 @@ export function AnimatedBackground() {
     window.addEventListener("resize", resizeCanvas);
 
     const colors = [
-      "139, 92, 246",  // primary blue-violet
-      "34, 211, 238",  // accent cyan
-      "168, 85, 247",  // purple
-      "59, 130, 246",  // blue
+      "139, 92, 246",
+      "34, 211, 238",
+      "168, 85, 247",
+      "59, 130, 246",
     ];
 
-    // Initialize particles
     const particleCount = Math.floor((canvas.width * canvas.height) / 15000);
     particlesRef.current = Array.from({ length: particleCount }, () => ({
       x: Math.random() * canvas.width,
@@ -75,49 +74,43 @@ export function AnimatedBackground() {
       const particles = particlesRef.current;
       const connections: Connection[] = [];
 
-      // Update and draw particles
       particles.forEach((particle, i) => {
-        // Mouse interaction
         const dx = mouseRef.current.x - particle.x;
         const dy = mouseRef.current.y - particle.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < 200) {
+        if (dist < 200 && dist > 0) {
           const force = (200 - dist) / 200;
           particle.vx += (dx / dist) * force * 0.02;
           particle.vy += (dy / dist) * force * 0.02;
         }
 
-        // Update position
         particle.x += particle.vx;
         particle.y += particle.vy;
-
-        // Friction
         particle.vx *= 0.99;
         particle.vy *= 0.99;
 
-        // Bounce off edges
         if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
         if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
 
-        // Keep in bounds
         particle.x = Math.max(0, Math.min(canvas.width, particle.x));
         particle.y = Math.max(0, Math.min(canvas.height, particle.y));
 
-        // Pulse effect
         particle.pulse += particle.pulseSpeed;
         const pulseAlpha = particle.alpha + Math.sin(particle.pulse) * 0.2;
 
-        // Draw particle with glow
-       if (!isFinite(particle.x) || !isFinite(particle.y) || !isFinite(particle.radius)) continue;
+        // Safety check before drawing
+        if (
+          !isFinite(particle.x) ||
+          !isFinite(particle.y) ||
+          !isFinite(particle.radius) ||
+          particle.radius <= 0
+        ) return;
+
         ctx.beginPath();
         const gradient = ctx.createRadialGradient(
-          particle.x,
-          particle.y,
-          0,
-          particle.x,
-          particle.y,
-          particle.radius * 4
+          particle.x, particle.y, 0,
+          particle.x, particle.y, particle.radius * 4
         );
         gradient.addColorStop(0, `rgba(${particle.color}, ${pulseAlpha})`);
         gradient.addColorStop(0.5, `rgba(${particle.color}, ${pulseAlpha * 0.3})`);
@@ -126,13 +119,11 @@ export function AnimatedBackground() {
         ctx.arc(particle.x, particle.y, particle.radius * 4, 0, Math.PI * 2);
         ctx.fill();
 
-        // Core particle
         ctx.beginPath();
         ctx.fillStyle = `rgba(${particle.color}, ${pulseAlpha + 0.3})`;
         ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Find connections
         for (let j = i + 1; j < particles.length; j++) {
           const other = particles[j];
           const cdx = other.x - particle.x;
@@ -149,15 +140,12 @@ export function AnimatedBackground() {
         }
       });
 
-      // Draw connections
       connections.forEach((conn) => {
         const from = particles[conn.from];
         const to = particles[conn.to];
-
         const gradient = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
         gradient.addColorStop(0, `rgba(${from.color}, ${conn.alpha})`);
         gradient.addColorStop(1, `rgba(${to.color}, ${conn.alpha})`);
-
         ctx.beginPath();
         ctx.strokeStyle = gradient;
         ctx.lineWidth = 1;
