@@ -109,6 +109,7 @@ export function AnimatedBackground() {
         const pulseAlpha = particle.alpha + Math.sin(particle.pulse) * 0.2;
 
         // Draw particle with glow
+        if (!isFinite(particle.x) || !isFinite(particle.y) || !isFinite(particle.radius)) continue;
         ctx.beginPath();
         const gradient = ctx.createRadialGradient(
           particle.x,
